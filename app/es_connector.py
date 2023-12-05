@@ -2,9 +2,8 @@
 from elasticsearch import Elasticsearch
 from dotenv import load_dotenv
 import os
-import elasticsearch
 import logging
-#import yaml
+import json
 
 load_dotenv()
 
@@ -14,35 +13,55 @@ class ElasticsearchConnector:
         self.connect()
 
     def connect(self):
-        es = es = Elasticsearch("http://localhost:9200")
-        print(es.info().body)
-        self.es_client = es
-
-    def create_index(self, index_name, mapping=None):
-        try:
-            if mapping:
-                pass
-                # with open('config.yml', 'r') as file:
-                #     mappings = yaml.safe_load(file)
-                return self.es_client.indices.create(index=index_name, mappings=mappings)
-            else:
-                return self.es_client.indices.create(index=index_name)
+        try: 
+            es = Elasticsearch(os.getenv("ES_URL"))
+            logging.info(es.info().body)
+            self.es_client = es
         except Exception as e:
-            logging.error(e)
+            logging.error(f"Error while connecting to ES: {e}")
 
-        
-    def insert_document(self, index_name, document_id, document):
-        try:
-            return self.es_client.index(index=index_name, id=document_id, body=document)
-        except Exception as e:
-            logging.error(e)
 
-    def get_data(self, index_name, search_query, size=os.getenv("ES_RETRIEVAL_SIZE")): 
+    def create_es_index_with_mapping(self, index_name: str, mapping_file: dict)-> None:
         try:
-            result = self.es_client.search(index=index_name, body=search_query, allow_partial_search_results=True,
-                                           size=size, request_timeout=120)
-            return result
+            if not self.es_client.indices.exists(index=index_name):
+                with open(mapping_file) as f:
+                    mapping = json.loads(f.read())
+                    self.es_client.indices.create(index=index_name, mappings=mapping)
         except Exception as e:
-            logging.error(e)
+            logging.error(f"Failed to create index {index_name}: {e}")
+
+    def insert_document(self, index_name: str, _id: str, doc: dict)-> None:
+        try:
+            self.es_client.index(index=index_name, id=_id, document=doc)
+        except Exception as e:
+            logging.error(f"Failed to log document to index {index_name} with id {_id} and content {doc}: {e}")
+
+    def update_document(self, index_name: str, _id: str, _doc: str)-> None:
+        try:
+            self.es_client.update(index=index_name, id=_id, doc=_doc)
+        except Exception as e:
+            logging.error(f"Failed to update document to index {index_name} with id {_id} and content {_doc}: {e}")
+    
+    def search_documents(self, index_name: str, _query: str):
+        try:
+            print("IT SEEMS THER IS AN ERROR HERE")
+            query = {
+                "query": {
+                    "match_all": {}
+                }}
+            response = self.es_client.search(index=index_name, query={"match_all": {}})
+            print(f"IS THER A RESPONSE$$$$$$$$$$$$$$$$$$$$$$: {response}")
+            logging.error(f"IS THER A RESPONSE$$$$$$$$$$$$$$$$$$$$$$: {response}")
+            return response
+        except Exception as e:
+            print(f"Failed to search documents in index {index_name} with query {_query}: {e}")
+            logging.error(f"Failed to search documents in index {index_name} with query {_query}: {e}")
+
+
+    def delete_document(self, index_name: str, _id: str)-> None:
+        try:
+            self.es_client.delete(index=index_name, id=_id)
+        except Exception as e:
+            logging.error(f"Failed to delete document from index {index_name} with id {_id}: {e}")
 
 
