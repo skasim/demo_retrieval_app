@@ -46,4 +46,4 @@ Example messages:
 2. check message insertion into
 
 ## Consume message
-Just for fyi, consume message `kafka-console-consumer --topic chitchat --from-beginning --bootstrap-server localhost:9092`
+Fyi, consume message `kafka-console-consumer --topic chitchat --from-beginning --bootstrap-server localhost:9092`
