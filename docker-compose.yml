@@ -6,6 +6,7 @@ services:
         container_name: elasticsearch
         environment:
             - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+            - node.name=es
             - cluster.name=es-docker-cluster
             - MAX_LOCKED_MEMORY=unlimited
             - xpack.security.enabled=false
@@ -18,20 +19,25 @@ services:
         ports:
             - 9200:9200
             - 9300:9300
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:9200"]
+            interval: 30s
+            timeout: 10s
+            retries: 5
             
-    # api:
-    #     build: .
-    #     container_name: "demo-api"
-    #     environment:
-    #       - PYTHONPATH=/code/app
-    #     volumes:
-    #         - ./:/code
-    #     ports:
-    #         - 8000:80
-    #     networks:
-    #         - demonet
-    #     depends_on:
-    #         - "es"
+    api:
+        build: .
+        container_name: "demo-api"
+        environment:
+          - PYTHONPATH=/code/app
+        volumes:
+            - ./:/code
+        ports:
+            - 8000:80
+        networks:
+            - demonet
+        depends_on:
+            - "es"
 
     zookeeper:
         image: confluentinc/cp-zookeeper:latest
