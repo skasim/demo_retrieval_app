@@ -1,5 +1,5 @@
-app/__pycache__/*
+app/__pycache__
 data/
-es_data_volume/
+es8_data_volume/
 .DS_Store
 .conda/

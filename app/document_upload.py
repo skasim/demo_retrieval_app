@@ -14,6 +14,10 @@ load_dotenv()
 
 es = ElasticsearchConnector()
 
+"""
+To index, change es url in .env file!
+"""
+
 es.create_es_index_with_mapping(os.getenv("ES_MOVIES_INDEX_NAME"), os.getenv("ES_MAPPING_MOVIES_FILE"))
 
 df = (

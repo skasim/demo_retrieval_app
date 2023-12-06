@@ -2,23 +2,28 @@ version: '3.8'
 
 services:
     es:
-        image: docker.elastic.co/elasticsearch/elasticsearch:8.7.0
+        image: docker.elastic.co/elasticsearch/elasticsearch:7.17.15
         container_name: elasticsearch
         environment:
             - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-            # - node.name=es
+            - node.name=es
             - cluster.name=es-docker-cluster
             - MAX_LOCKED_MEMORY=unlimited
             - xpack.security.enabled=false
             - discovery.type=single-node
         volumes:
-            - ./es_data_volume:/usr/share/elasticsearch/data
+            - ./es8_data_volume:/usr/share/elasticsearch/data
             - ./elasticsearch.yml:/etc/elasticsearch/elasticsearch.yml
         networks:
             - demonet
         ports:
             - 9200:9200
             - 9300:9300
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:9200"]
+            interval: 30s
+            timeout: 10s
+            retries: 5
             
     api:
         build: .
@@ -34,5 +39,76 @@ services:
         depends_on:
             - "es"
 
+    zookeeper:
+        image: confluentinc/cp-zookeeper:latest
+        container_name: "zookeeper"
+        environment:
+            ZOOKEEPER_CLIENT_PORT: 2181
+            ZOOKEEPER_TICK_TIME: 2000
+            ZOOKEEPER_SYNC_LIMIT: 2
+        ports:
+            - "2181:2181"
+        networks:
+            - demonet
+
+    kafka:
+        container_name: "kafka"
+        image: confluentinc/cp-kafka:latest
+        ports:
+            - "9092:9092"
+        depends_on:
+            - zookeeper
+        environment:
+            KAFKA_BROKER_ID: 1
+            KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+            KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+            KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+            KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+        networks:
+            - demonet
+
+    kafka-connect:
+        container_name: kafka-connect
+        image: confluentinc/cp-kafka-connect:latest
+        ports:
+            - "8083:8083"
+        depends_on:
+            - zookeeper
+            - kafka
+        volumes:
+            - $PWD/connect-plugins:/connect-plugins
+        environment:
+            CONNECT_BOOTSTRAP_SERVERS: kafka:9092
+            CONNECT_REST_PORT: 8083
+            CONNECT_GROUP_ID: compose-connect-group
+            CONNECT_CONFIG_STORAGE_TOPIC: _kafka-connect-group-01-configs
+            CONNECT_OFFSET_STORAGE_TOPIC: _kafka-connect-group-01-offsets
+            CONNECT_STATUS_STORAGE_TOPIC: _kafka-connect-group-01-status
+            CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+            CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+            CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+            CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+            CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+            CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect"
+            CONNECT_LOG4J_ROOT_LOGLEVEL: "INFO"
+            CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
+            CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: "[%d] %p %X{connector.context}%m (%c:%L)%n"
+            CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
+            CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
+            CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
+            CONNECT_PLUGIN_PATH: '/usr/share/java,/connectors,/usr/share/confluent-hub-components/'
+        command:
+        - bash
+        - -c
+        - |
+            echo "Installing Connector"
+            confluent-hub install --no-prompt confluentinc/kafka-connect-elasticsearch:10.0.1
+            #
+            echo "Launching Kafka Connect worker"
+            /etc/confluent/docker/run &
+            #
+            sleep infinity
+        networks:
+            - demonet
 networks:
     demonet:
