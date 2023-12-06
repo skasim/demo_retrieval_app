@@ -8,6 +8,11 @@ ES index must have same index name as topic, i.e., `chitchat`
 curl -X PUT "localhost:9200/chitchat?pretty"
 ```
 
+## Create a topic
+`$topic_name==chitchat``
+1. `docker exec -it kafka bash`
+2. create a topic: `kafka-topics --create --topic chitchat --bootstrap-server localhost:9092`
+
 ## Create an ES-Kafka Connector
 ```
 POST http://localhost:8083/connectors
@@ -30,11 +35,6 @@ Content-Type: application/json
 Check in [http://localhost:8083/connectors](http://localhost:8083/connectors) for connector.
 `connection.url` is referencing within the docker network so must call the container name and not `localhost`
 
-## Create a topic
-`$topic_name==chitchat``
-1. `docker exec -it kafka bash`
-2. create a topic: `kafka-topics --create --topic chitchat --bootstrap-server localhost:9092`
-
 ## Send messages
 1. produce message `kafka-console-producer --topic chitchat --bootstrap-server localhost:9092`
 Example messages:
@@ -43,8 +43,7 @@ Example messages:
 
 {"sentence": "is it sunny out?","timestamp": "2023-11-24T12:19:08.487416"}
 ```
-2. check message insertion into 
+2. check message insertion into
 
 ## Consume message
-Just for fyi, consume message `kafka-console-consumer --topic chitchat --from-beginning --bootstrap-server localhost:9092`
-
+Fyi, consume message `kafka-console-consumer --topic chitchat --from-beginning --bootstrap-server localhost:9092`
