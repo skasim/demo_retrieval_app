@@ -43,8 +43,7 @@ Example messages:
 
 {"sentence": "is it sunny out?","timestamp": "2023-11-24T12:19:08.487416"}
 ```
-2. check message insertion into 
+2. check message insertion into
 
 ## Consume message
 Just for fyi, consume message `kafka-console-consumer --topic chitchat --from-beginning --bootstrap-server localhost:9092`
-
