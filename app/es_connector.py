@@ -12,6 +12,7 @@ class ElasticsearchConnector:
         self.es_client = None
         self.connect()
 
+
     def connect(self):
         try: 
             es = Elasticsearch(os.getenv("ES_URL"))
@@ -30,6 +31,7 @@ class ElasticsearchConnector:
         except Exception as e:
             logging.error(f"Failed to create index {index_name}: {e}")
 
+
     def insert_document(self, index_name: str, _id: str, doc: dict)-> None:
         try:
             self.es_client.index(index=index_name, id=_id, document=doc)
@@ -42,19 +44,12 @@ class ElasticsearchConnector:
         except Exception as e:
             logging.error(f"Failed to update document to index {index_name} with id {_id} and content {_doc}: {e}")
     
+
     def search_documents(self, index_name: str, _query: str):
         try:
-            print("IT SEEMS THER IS AN ERROR HERE")
-            query = {
-                "query": {
-                    "match_all": {}
-                }}
-            response = self.es_client.search(index=index_name, query={"match_all": {}})
-            print(f"IS THER A RESPONSE$$$$$$$$$$$$$$$$$$$$$$: {response}")
-            logging.error(f"IS THER A RESPONSE$$$$$$$$$$$$$$$$$$$$$$: {response}")
+            response = self.es_client.search(index=index_name, query=_query)
             return response
         except Exception as e:
-            print(f"Failed to search documents in index {index_name} with query {_query}: {e}")
             logging.error(f"Failed to search documents in index {index_name} with query {_query}: {e}")
 
 
