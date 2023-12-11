@@ -8,14 +8,18 @@ import json
 load_dotenv()
 
 class ElasticsearchConnector:
-    def __init__(self) -> None:
+    def __init__(self, indocker=True) -> None:
         self.es_client = None
+        self.indocker = indocker
         self.connect()
 
 
     def connect(self):
-        try: 
-            es = Elasticsearch(os.getenv("ES_URL"))
+        try:
+            if self.indocker:
+                es = Elasticsearch(os.getenv("ES_DOCKER2ES_URL"))
+            else:
+                es = Elasticsearch(os.getenv("ES_HOST2ES_URL"))
             logging.info(es.info().body)
             self.es_client = es
         except Exception as e:
@@ -43,7 +47,7 @@ class ElasticsearchConnector:
             self.es_client.update(index=index_name, id=_id, doc=_doc)
         except Exception as e:
             logging.error(f"Failed to update document to index {index_name} with id {_id} and content {_doc}: {e}")
-    
+
 
     def search_documents(self, index_name: str, _query: str):
         try:
@@ -58,5 +62,3 @@ class ElasticsearchConnector:
             self.es_client.delete(index=index_name, id=_id)
         except Exception as e:
             logging.error(f"Failed to delete document from index {index_name} with id {_id}: {e}")
-
-

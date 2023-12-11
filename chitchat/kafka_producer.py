@@ -1,5 +1,4 @@
 from confluent_kafka import Producer
-import uuid
 import socket
 import json
 import os
@@ -19,7 +18,7 @@ def delivery_report(err, msg):
     else:
         print('Message delivered to {} [{}]'.format(msg.topic(), msg.partition()))
 
-with open("data/dummy_chat_data.json") as f:
+with open(os.getenv("CHITCHAT_DUMMY_DATAFILE")) as f:
     data = json.load(f)
     for i, item in enumerate(data):
         print(f"processing doc: {i}: {item}")
@@ -30,6 +29,5 @@ with open("data/dummy_chat_data.json") as f:
         # be triggered from the call to poll() above, or flush() below, when the
         # message has been successfully delivered or failed permanently.
         p.produce(os.getenv("KAFKA_TOPIC_CHITCHAT"), json.dumps(item), callback=delivery_report)
-
 
 p.flush()
