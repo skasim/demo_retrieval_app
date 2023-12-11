@@ -1,8 +1,33 @@
-# Running Kafka and Zookeeper
+# Python Script Run
+1. Create ES index with topic name `chitchat`
+2. Create ES Kafka Connector
+```
+POST http://localhost:8083/connectors
+Content-Type: application/json
+{
+ "name": "elasticsearch-connector",
+ "config": {
+   "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+   "connection.url": "http://elasticsearch:9200",
+   "tasks.max": "1",
+   "topics": "chitchat",
+   "type.name": "_doc",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter.schemas.enable": "false",
+     "schema.ignore": "true",
+    "key.ignore": "true"
+ }
+}
+```
+3. Run `chitchat/kafka_producer.py`
+4. Access [localhost:9200/chitchat?pretty](localhost:9200/chitchat?pretty) to see output
+
+# Manual Run
+## Running Kafka and Zookeeper
 1. Run Kafka, ZK, and Kafka-Connector with `docker-compose.yml`
 2. Check that connector is running in [http://localhost:8083/](http://localhost:8083/)
 
-# Create an ES index
+## Create an ES index
 ES index must have same index name as topic, i.e., `chitchat`
 ```
 curl -X PUT "localhost:9200/chitchat?pretty"

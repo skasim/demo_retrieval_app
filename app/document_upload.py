@@ -1,4 +1,4 @@
-# based on 1) https://medium.com/@pritam7798sonawane/building-a-text-search-application-with-elasticsearch-and-fastapi-14ea78cf1890; 
+# based on 1) https://medium.com/@pritam7798sonawane/building-a-text-search-application-with-elasticsearch-and-fastapi-14ea78cf1890;
 # and 2) https://dylancastillo.co/elasticsearch-python/
 from es_connector import ElasticsearchConnector
 import uuid
@@ -12,13 +12,13 @@ logging.getLogger().setLevel(logging.INFO)
 
 load_dotenv()
 
-es = ElasticsearchConnector()
+es = ElasticsearchConnector(indocker=False)
 
 """
 To index, change es url in .env file!
 """
 
-es.create_es_index_with_mapping(os.getenv("ES_MOVIES_INDEX_NAME"), os.getenv("ES_MAPPING_MOVIES_FILE"))
+es.create_es_index_with_mapping(os.getenv("ES_MOVIES_INDEX_NAME"), os.getenv("ES_MAPPING_CHAT_FILE"))
 
 df = (
     pd.read_csv("data/wiki_movie_plots_deduped.csv")
@@ -49,10 +49,8 @@ for i, row in df.iterrows():
             "_source": doc
         }
     )
-    if i % 500 == 0: 
+    if i % 500 == 0:
         logging.info(f"Processing document {i}")
         # bulk upload to index
         bulk(client=es.es_client, actions=bulk_data)
         bulk_data = []
-
-            
